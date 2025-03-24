@@ -10,7 +10,7 @@
 1. Клонируйте репозиторий на ваш компьютер:
 
    ```bash
-   git clone https://github.com/front-backend
+   git clone https://github.com/tenshyy1/frontend-backend.git
 2. Перейдите в папку проекта:
 
    ```bash
