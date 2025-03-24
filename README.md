@@ -11,3 +11,25 @@
 
    ```bash
    git clone https://github.com/front-backend
+2. Перейдите в папку проекта:
+
+   ```bash
+   cd frontend-backend
+
+3. Установите зависимости для сервера:
+
+   ```bash
+   cd backend
+   npm install
+
+4. Запуск проекта:
+
+   ```bash
+   npm start
+
+5. Проект будет доступен по адресу:
+
+   ```bash
+   http://localhost:3000
+
+
