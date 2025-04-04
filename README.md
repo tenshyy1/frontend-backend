@@ -16,16 +16,17 @@
    ```bash
    cd frontend-backend
 
-3. Установи зависимости для сервера:
+3. Установи зависимости:
 
    ```bash
-   cd backend
-   npm install
+   npm init -y
+   npm install express express-session bcrypt
 
 4. Запуск проекта:
 
    ```bash
-   npm start
+   cd backend
+   node server.js
 
 5. Проект будет доступен по адресу:
 

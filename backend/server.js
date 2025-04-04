@@ -81,7 +81,7 @@ app.get('/data', async (req, res) => {
 
         const newData = {
             timestamp: Date.now(),
-            data: `Случайные данные: ${Math.random()}`
+            data: `data: ${Math.random()}`
         };
         
         await fs.writeFile(cacheFile, JSON.stringify(newData));
