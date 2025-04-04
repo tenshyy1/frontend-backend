@@ -1,47 +1,82 @@
-const backendUrl = 'http://localhost:3000';
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleTheme = () => {
+        document.body.classList.toggle('dark');
+        document.body.classList.toggle('light');
+        localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    };
 
-document.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const username = form.querySelector('#username').value;
-    const password = form.querySelector('#password').value;
-    const endpoint = form.id === 'registerForm' ? '/register' : '/login';
-    const message = document.getElementById('message');
+    const theme = localStorage.getItem('theme') || 'light';
+    document.body.classList.add(theme);
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
-    const response = await fetch(`${backendUrl}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const showRegister = document.getElementById('showRegister');
 
-    const data = await response.json();
-    message.textContent = data.message || 'Успех!';
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(loginForm);
+            const response = await fetch('/login', {
+                method: 'POST',
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (response.ok) {
+                window.location = '/profile.html';
+            } else {
+                alert('Ошибка входа');
+            }
+        });
 
-    if (form.id === 'registerForm' && response.ok) {
-        alert('Регистрация успешна! Перенаправление на страницу входа.');
-        window.location.href = '/login.html';
-    } else if (form.id === 'loginForm' && data.token) {
-        localStorage.setItem('token', data.token);
-        console.log('JWT Token:', data.token); 
+        showRegister.addEventListener('click', () => {
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('register').style.display = 'block';
+        });
+    }
 
-        alert('Вход выполнен! Перенаправление на главную.');
-        window.location.href = '/index.html';
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(registerForm);
+            const response = await fetch('/register', {
+                method: 'POST',
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (response.ok) {
+                alert('Регистрация успешна');
+                document.getElementById('auth').style.display = 'block';
+                document.getElementById('register').style.display = 'none';
+            } else {
+                alert('Ошибка регистрации');
+            }
+        });
+    }
+
+    if (document.getElementById('username')) {
+        fetch('/profile')
+            .then(res => {
+                if (!res.ok) throw new Error('Не авторизован');
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById('username').textContent = data.username;
+                loadData();
+            })
+            .catch(() => window.location = '/');
+
+        document.getElementById('refresh').addEventListener('click', loadData);
+        document.getElementById('logout').addEventListener('click', () => {
+            fetch('/logout', { method: 'POST' })
+                .then(() => window.location = '/');
+        });
     }
 });
 
-async function getProtectedData() {
-    const token = localStorage.getItem('token');
-    const result = document.getElementById('result');
 
-    if (!token) {
-        result.textContent = 'Сначала войдите в систему!';
-        return;
-    }
-
-    const response = await fetch(`${backendUrl}/protected`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-    result.textContent = data.message || 'Ошибка доступа';
+async function loadData() {
+    const response = await fetch('/data');
+    const result = await response.json();
+    document.getElementById('data').textContent = result.data;
 }

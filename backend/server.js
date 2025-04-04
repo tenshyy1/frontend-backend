@@ -1,57 +1,99 @@
-require('dotenv').config();
 const express = require('express');
-const jwt = require('jsonwebtoken');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-
-const app = express();
+const bcrypt = require('bcrypt');
+const session = require('express-session');
+const fs = require('fs').promises;
 const path = require('path');
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// sesion prikols
+app.use(session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hour
+    }
+}));
+
+const users = new Map();
+
+const authMiddleware = (req, res, next) => {
+    if (!req.session.userId) {
+        return res.status(401).redirect('/');
+    }
+    next();
+};
+
+// register
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    
+    if (users.has(username)) {
+        return res.status(400).json({ error: 'Пользователь уже существует' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users.set(username, { password: hashedPassword });
+    res.status(201).json({ message: 'Регистрация успешна' });
+});
+
+// login
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = users.get(username);
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        return res.status(401).json({ error: 'Неверные данные' });
+    }
+
+    req.session.userId = username;
+    res.json({ message: 'Вход успешен' });
+});
+
+// profile
+app.get('/profile', authMiddleware, (req, res) => {
+    res.json({ username: req.session.userId });
+});
+
+// logout
+app.post('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
+});
+
+const cacheFile = path.join(__dirname, 'cache.json');
+app.get('/data', async (req, res) => {
+    try {
+        let cacheData = null;
+        try {
+            const cache = await fs.readFile(cacheFile, 'utf-8');
+            cacheData = JSON.parse(cache);
+            if (Date.now() - cacheData.timestamp < 60 * 1000) {
+                return res.json({ data: cacheData.data, cached: true });
+            }
+        } catch (e) {
+        }
+
+        const newData = {
+            timestamp: Date.now(),
+            data: `Случайные данные: ${Math.random()}`
+        };
+        
+        await fs.writeFile(cacheFile, JSON.stringify(newData));
+        res.json({ data: newData.data, cached: false });
+    } catch (error) {
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-const PORT = process.env.PORT || 3000;
-const SECRET_KEY = process.env.SECRET_KEY || 'secret';
-
-const users = [];
-
-app.use(cors());
-app.use(bodyParser.json());
-
-// Регистрация
-app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-    if (users.some(user => user.username === username)) {
-        return res.status(400).json({ message: 'Пользователь уже существует' });
-    }
-    users.push({ username, password });
-    res.status(201).json({ message: 'Пользователь зарегистрирован' });
-});
-
-// Логин
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    const user = users.find(u => u.username === username && u.password === password);
-    if (!user) {
-        return res.status(401).json({ message: 'Неверные учетные данные' });
-    }
-    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token });
-});
-
-// Middleware проверки JWT
-function authenticateToken(req, res, next) {
-    const token = req.headers['authorization'];
-    if (!token) return res.status(401).json({ message: 'Токен не предоставлен' });
-
-    jwt.verify(token.split(' ')[1], SECRET_KEY, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Недействительный токен' });
-        req.user = user;
-        next();
-    });
-}
-
-// Защищенный маршрут
-app.get('/protected', authenticateToken, (req, res) => {
-    res.json({ message: `Добро пожаловать, ${req.user.username}! ` });
-});
-
-app.listen(PORT, () => console.log(`Сервер запущен на http://localhost:${PORT}`));
+app.listen(3000, () => {
+    console.log('Сервер запущен: \x1b[34mhttp://localhost:3000\x1b[0m');
+  });
+  

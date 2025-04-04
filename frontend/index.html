@@ -1,18 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <title>baza</title>
+    <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="main-page">
-    <h1>Хелоу</h1>
-    <a href="register.html" class="btn btn-primary">Регистрация</a>
-    <a href="login.html" class="btn btn-success">Вход</a>
-    <button onclick="getProtectedData()" class="btn btn-warning" style="max-width: 150px; font-size: 15px;">Доступ к защищенным данным</button>
-    <p id="result" class="mt-3"></p>
-    <script src="script.js"></script>
+<body>
+    <div class="container">
+        <button id="themeToggle">Change Theme</button>
+        <div id="auth">
+            <h2>Sign in</h2>
+            <form id="loginForm">
+                <input type="text" name="username" placeholder="Логин" required>
+                <input type="password" name="password" placeholder="Пароль" required>
+                <button type="submit">Login</button>
+            </form>
+            <button id="showRegister">Register</button>
+        </div>
+        
+        <div id="register" style="display: none;">
+            <h2>Register</h2>
+            <form id="registerForm">
+                <input type="text" name="username" placeholder="Логин" required>
+                <input type="password" name="password" placeholder="Пароль" required>
+                <button type="submit">Create account</button>
+            </form>
+        </div>
+    </div>
+    <script src="/script.js"></script>
 </body>
 </html>
